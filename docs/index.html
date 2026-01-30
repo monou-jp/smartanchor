@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SmartAnchor Demo | 固定ヘッダ対応アンカー補正</title>
+
+    <style>
+        :root{
+            --header-h:72px;
+            --bg:#fff;
+            --muted:#667085;
+            --card:#f5f7fa;
+            --border:#e5e7eb;
+            --accent:#0d47a1;
+            --accent2:#1565c0;
+            --codebg:#0b0f19;
+            --codefg:#e6edf3;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.7;color:#111827;background:var(--bg);}
+        header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:var(--accent);color:#fff;display:flex;align-items:center;z-index:1000;box-shadow:0 6px 18px rgba(0,0,0,.12);}
+        .header-inner{width:100%;max-width:1020px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:12px;justify-content:space-between;}
+        .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px;flex-wrap:wrap;}
+        .pill{font-size:12px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);padding:4px 10px;border-radius:999px;white-space:nowrap;}
+        .link{color:#fff;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.7);}
+        .link:hover{border-bottom-style:solid;}
+
+        main{padding-top:calc(var(--header-h) + 20px);max-width:1020px;margin:0 auto;padding-left:16px;padding-right:16px;padding-bottom:80px;}
+        .grid{display:grid;grid-template-columns:1fr;gap:16px;margin:18px 0 26px;}
+        @media (min-width:920px){.grid{grid-template-columns:1.1fr .9fr;}}
+        .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;}
+        .muted{color:var(--muted);}
+        nav.card ul{margin:10px 0 0;padding-left:18px;}
+        nav.card li{margin:6px 0;}
+
+        section{margin:42px 0;}
+        h1{margin:16px 0 6px;}
+        h2{margin:0 0 10px;padding-bottom:8px;border-bottom:2px solid #eaecef;}
+        h3{margin:18px 0 6px;}
+        p{margin:10px 0;}
+
+        pre{margin:10px 0;background:var(--codebg);color:var(--codefg);padding:14px;border-radius:12px;overflow-x:auto;font-size:13px;line-height:1.55;}
+        code{background:#eef2ff;border:1px solid #e0e7ff;padding:1px 6px;border-radius:6px;font-size:.95em;}
+
+        .controls{display:grid;gap:12px;}
+        .row{display:grid;grid-template-columns:1fr;gap:10px;}
+        @media (min-width:560px){.row{grid-template-columns:1fr 1fr;}}
+        label{display:grid;gap:6px;font-weight:600;font-size:13px;}
+        input[type="number"],select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px;}
+
+        .btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+        button{border:1px solid rgba(13,71,161,.35);background:linear-gradient(180deg,#1e88e5,var(--accent2));color:#fff;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;}
+        button.secondary{background:#fff;color:#0d47a1;border:1px solid rgba(13,71,161,.35);}
+        button:disabled{opacity:.55;cursor:not-allowed;}
+
+        .status{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:13px;}
+        .status strong{font-weight:800;}
+
+        .note{border-left:4px solid #93c5fd;background:#eff6ff;padding:12px;border-radius:10px;}
+        .warn{border-left:4px solid #fbbf24;background:#fffbeb;padding:12px;border-radius:10px;}
+
+        .table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;font-size:14px;}
+        .table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+        .table th{background:#f8fafc;font-size:13px;}
+        .table tr:last-child td{border-bottom:0;}
+
+        footer{margin-top:70px;padding:40px 16px;background:#f5f5f5;text-align:center;font-size:13px;color:#374151;}
+
+        .demo-box{margin:18px 0 0;padding:12px;background:#fff;border:1px dashed #c7d2fe;border-radius:12px;}
+        .small{font-size:12px;}
+    </style>
+
+    <!-- SmartAnchor config (drop-in) -->
+    <script>
+        window.SMARTANCHOR_CONFIG = {
+            offset: 72,
+            autoInit: true
+        };
+    </script>
+
+    <!-- SmartAnchor (demo assumes docs/demo.html, library at ../smartanchor.js) -->
+    <script src="../smartanchor.js" defer></script>
+</head>
+
+<body>
+<header>
+    <div class="header-inner">
+        <div class="brand">
+            <span>SmartAnchor Demo</span>
+            <span class="pill">Fixed Header: 72px</span>
+            <span class="pill" id="pill-mode">Mode: SmartAnchor ON</span>
+        </div>
+        <div>
+            <a class="link" href="https://monou.jp" target="_blank" rel="noopener">制作: 門王</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <h1>SmartAnchor 紹介 & 動作デモ</h1>
+    <p class="muted">右の UI で ON/OFF や offset を変えて挙動を比較できます。</p>
+
+    <div class="grid">
+        <nav class="card" aria-label="目次">
+            <h2>目次（クリックしてデモ）</h2>
+            <p class="muted small">OFF にすると「見出しがヘッダに隠れる」問題が再現されます。</p>
+            <ul>
+                <li><a href="#what">SmartAnchorとは</a></li>
+                <li><a href="#problem">なぜ問題が起きるのか</a></li>
+                <li><a href="#try">ON/OFF UI（使い方）</a></li>
+                <li><a href="#usage">導入方法（初心者向け）</a></li>
+                <li><a href="#options">設定一覧（制作会社向け）</a></li>
+                <li><a href="#csp">CSP・広告・設定による注意点</a></li>
+                <li><a href="#troubleshooting">動かない時のチェック</a></li>
+                <li><a href="#about-monou">制作：門王（依頼受付）</a></li>
+            </ul>
+
+            <div class="demo-box">
+                <strong>クイックテスト</strong>
+                <p class="muted small">このリンクは SmartAnchor を無効化します（常に通常ジャンプ）。</p>
+                <p><a href="#problem" data-smartanchor-ignore>data-smartanchor-ignore（通常ジャンプ）</a></p>
+            </div>
+        </nav>
+
+        <aside class="card">
+            <h2>ON/OFF・設定 UI</h2>
+            <p class="muted small">このUIはデモ用です。本番には不要です。</p>
+
+            <div class="controls">
+                <div class="status">
+                    状態: <strong id="statusText">SmartAnchor ON</strong><br />
+                    現在の設定: <span id="statusConfig" class="muted small"></span>
+                </div>
+
+                <div class="row">
+                    <label>
+                        Mode
+                        <select id="modeSelect">
+                            <option value="on" selected>ON（補正あり）</option>
+                            <option value="off">OFF（通常ジャンプ）</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        offset（固定ヘッダ高さ）
+                        <input id="offsetInput" type="number" min="0" step="1" value="72" />
+                    </label>
+                </div>
+
+                <div class="row">
+                    <label>
+                        animate
+                        <select id="animateSelect">
+                            <option value="true" selected>true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        duration（ms）
+                        <input id="durationInput" type="number" min="0" step="10" value="280" />
+                    </label>
+                </div>
+
+                <div class="row">
+                    <label>
+                        easing
+                        <select id="easingSelect">
+                            <option value="easeOut" selected>easeOut</option>
+                            <option value="easeInOut">easeInOut</option>
+                            <option value="linear">linear</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        updateHash
+                        <select id="updateHashSelect">
+                            <option value="true" selected>true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="row">
+                    <label>
+                        historyMode
+                        <select id="historyModeSelect">
+                            <option value="push" selected>push</option>
+                            <option value="replace">replace</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        focus
+                        <select id="focusSelect">
+                            <option value="true" selected>true</option>
+                            <option value="false">false</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="btns">
+                    <button id="applyBtn">設定を適用</button>
+                    <button id="resetBtn" class="secondary">初期値に戻す</button>
+                    <button id="copyBtn" class="secondary">スニペットをコピー</button>
+                </div>
+
+                <div class="note small" id="copyHint" style="display:none;">
+                    コピーしました（使えない環境では下のテキストを手動でコピーしてください）
+                </div>
+
+                <div class="demo-box">
+                    <strong>生成されたスニペット（貼り付け用）</strong>
+                    <pre id="snippetBox"></pre>
+                </div>
+
+                <div class="warn small">
+                    <strong>注意:</strong> OFF は検証・切り分け用です。本番サイトでは通常 ON のまま使います。
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <section id="what">
+        <h2>SmartAnchorとは</h2>
+        <p>
+            固定ヘッダ（position: fixed / sticky）が原因で発生するアンカーリンクのズレを、
+            既存サイトに後付けで一括解決する軽量スクリプトです。
+        </p>
+    </section>
+
+    <section id="problem">
+        <h2>なぜ問題が起きるのか（fixed header 問題）</h2>
+        <p>
+            ブラウザ標準の <code>#anchor</code> ジャンプは「対象要素の上端を viewport 上端に合わせる」動作です。
+            固定ヘッダがあると viewport 上端が覆われるため、見出しが隠れます。
+        </p>
+    </section>
+
+    <section id="try">
+        <h2>ON/OFF UI（使い方）</h2>
+        <ol>
+            <li>右の Mode を OFF にする</li>
+            <li>目次リンクをクリックして「隠れる」問題を確認</li>
+            <li>Mode を ON に戻して補正を確認</li>
+            <li>offset をサイトのヘッダ高さに合わせる</li>
+        </ol>
+    </section>
+
+    <section id="usage">
+        <h2>導入方法（初心者向け）</h2>
+        <pre>
+&lt;script&gt;
+  window.SMARTANCHOR_CONFIG = { offset: 72, autoInit: true };
+&lt;/script&gt;
+&lt;script src="/assets/js/smartanchor.js" defer&gt;&lt;/script&gt;
+    </pre>
+    </section>
+
+    <section id="options">
+        <h2>設定一覧（制作会社向け）</h2>
+        <table class="table">
+            <thead>
+            <tr><th>option</th><th>type</th><th>説明</th></tr>
+            </thead>
+            <tbody>
+            <tr><td>offset</td><td>number</td><td>固定ヘッダの高さ</td></tr>
+            <tr><td>animate</td><td>boolean</td><td>スクロールアニメ</td></tr>
+            <tr><td>duration</td><td>number</td><td>アニメ時間（ms）</td></tr>
+            <tr><td>easing</td><td>string</td><td>linear / easeOut / easeInOut</td></tr>
+            <tr><td>updateHash</td><td>boolean</td><td>URLハッシュ更新</td></tr>
+            <tr><td>historyMode</td><td>string</td><td>push / replace</td></tr>
+            <tr><td>focus</td><td>boolean</td><td>a11y focus</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="csp">
+        <h2>CSP・広告・設定による注意点（動かなくなる可能性）</h2>
+
+        <h3>CSP</h3>
+        <p class="muted small">
+            外部JSを禁止している場合、smartanchor.js 自体が読み込めません。推奨は自サイト配信（'self'）です。
+        </p>
+
+        <h3>広告ブロッカー</h3>
+        <p class="muted small">
+            CDN配信のJSがブロックされることがあります。自サイト配信が安全です。
+        </p>
+
+        <h3>WordPress最適化/キャッシュ</h3>
+        <p class="muted small">
+            結合や遅延で実行順が変わると設定が効かないことがあります。smartanchor.js を除外するのが安全です。
+        </p>
+    </section>
+
+    <section id="troubleshooting">
+        <h2>動かない時のチェック</h2>
+        <ol>
+            <li>smartanchor.js のパスが正しいか</li>
+            <li>SMARTANCHOR_CONFIG が先に定義されているか</li>
+            <li>offset が実ヘッダ高さと合っているか</li>
+            <li>最適化/キャッシュで順序が変わっていないか</li>
+        </ol>
+    </section>
+
+    <section id="about-monou">
+        <h2>制作：門王（依頼受付）</h2>
+        <p>
+            SmartAnchor は <a href="https://monou.jp" target="_blank" rel="noopener">門王（monou.jp）</a> が制作しています。
+            既存サイト向けの軽量スクリプト開発や、WordPress/静的サイトの改善などのご依頼を受け付けています。
+        </p>
+    </section>
+
+    <footer>SmartAnchor Demo Page / © monou.jp</footer>
+</main>
+
+<script>
+    (function () {
+        'use strict';
+
+        var state = {
+            mode: 'on',
+            cfg: {
+                offset: 72,
+                animate: true,
+                duration: 280,
+                easing: 'easeOut',
+                updateHash: true,
+                historyMode: 'push',
+                focus: true
+            }
+        };
+
+        var elMode = document.getElementById('modeSelect');
+        var elOffset = document.getElementById('offsetInput');
+        var elAnimate = document.getElementById('animateSelect');
+        var elDuration = document.getElementById('durationInput');
+        var elEasing = document.getElementById('easingSelect');
+        var elUpdateHash = document.getElementById('updateHashSelect');
+        var elHistoryMode = document.getElementById('historyModeSelect');
+        var elFocus = document.getElementById('focusSelect');
+
+        var elApply = document.getElementById('applyBtn');
+        var elReset = document.getElementById('resetBtn');
+        var elCopy = document.getElementById('copyBtn');
+
+        var elStatusText = document.getElementById('statusText');
+        var elStatusConfig = document.getElementById('statusConfig');
+        var elSnippet = document.getElementById('snippetBox');
+        var elCopyHint = document.getElementById('copyHint');
+        var elPill = document.getElementById('pill-mode');
+
+        function toBool(v) { return String(v) === 'true'; }
+        function num(v, fallback) {
+            var n = parseInt(v, 10);
+            return isNaN(n) ? fallback : n;
+        }
+
+        function formatConfig(cfg) {
+            return 'offset=' + cfg.offset +
+                ', animate=' + cfg.animate +
+                ', duration=' + cfg.duration +
+                ', easing=' + cfg.easing +
+                ', updateHash=' + cfg.updateHash +
+                ', historyMode=' + cfg.historyMode +
+                ', focus=' + cfg.focus;
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        // Safer: snippet does not contain literal <script> tags in this JS block.
+        // We output an HTML-escaped snippet for copy/paste display.
+        function buildSnippetEscaped(cfg) {
+            var snippet = ''
+                + '<script>\n'
+                + '  window.SMARTANCHOR_CONFIG = {\n'
+                + '    offset: ' + cfg.offset + ',\n'
+                + '    animate: ' + (cfg.animate ? 'true' : 'false') + ',\n'
+                + '    duration: ' + cfg.duration + ',\n'
+                + '    easing: "' + cfg.easing + '",\n'
+                + '    updateHash: ' + (cfg.updateHash ? 'true' : 'false') + ',\n'
+                + '    historyMode: "' + cfg.historyMode + '",\n'
+                + '    focus: ' + (cfg.focus ? 'true' : 'false') + ',\n'
+                + '    autoInit: true\n'
+                + '  };\n'
+                + '<\/script>\n'
+                + '<script src="smartanchor.js" defer><\/script>\n';
+
+            return escapeHtml(snippet);
+        }
+
+function setStatus() {
+var on = (state.mode === 'on');
+elStatusText.textContent = on ? 'SmartAnchor ON' : 'SmartAnchor OFF（通常ジャンプ）';
+elStatusConfig.textContent = formatConfig(state.cfg);
+elSnippet.innerHTML = buildSnippetEscaped(state.cfg);
+elPill.textContent = 'Mode: ' + (on ? 'SmartAnchor ON' : 'SmartAnchor OFF');
+}
+
+function applyToSmartAnchor(cfg) {
+window.SMARTANCHOR_CONFIG = window.SMARTANCHOR_CONFIG || {};
+window.SMARTANCHOR_CONFIG.offset = cfg.offset;
+window.SMARTANCHOR_CONFIG.animate = cfg.animate;
+window.SMARTANCHOR_CONFIG.duration = cfg.duration;
+window.SMARTANCHOR_CONFIG.easing = cfg.easing;
+window.SMARTANCHOR_CONFIG.updateHash = cfg.updateHash;
+window.SMARTANCHOR_CONFIG.historyMode = cfg.historyMode;
+window.SMARTANCHOR_CONFIG.focus = cfg.focus;
+window.SMARTANCHOR_CONFIG.autoInit = true;
+}
+
+function readUIIntoState() {
+state.mode = elMode.value;
+state.cfg.offset = num(elOffset.value, 72);
+state.cfg.animate = toBool(elAnimate.value);
+state.cfg.duration = num(elDuration.value, 280);
+state.cfg.easing = elEasing.value;
+state.cfg.updateHash = toBool(elUpdateHash.value);
+state.cfg.historyMode = elHistoryMode.value;
+state.cfg.focus = toBool(elFocus.value);
+}
+
+// OFF mode: force "native-like" behavior (no offset)
+function nativeAnchorHandler(e) {
+if (state.mode !== 'off') return;
+
+if (e.defaultPrevented) return;
+if (e.button != null && e.button !== 0) return;
+if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+var t = e.target;
+while (t && t !== document) {
+if (t.tagName && t.tagName.toLowerCase() === 'a') break;
+t = t.parentNode;
+}
+if (!t || t === document) return;
+
+var href = t.getAttribute('href') || '';
+if (!href || href === '#' || href.charAt(0) !== '#') return;
+
+if (e.preventDefault) e.preventDefault();
+
+try { window.location.hash = href; } catch (ex) {}
+
+var id = href.slice(1);
+try { id = decodeURIComponent(id); } catch (ex2) {}
+var target = document.getElementById(id) || (document.getElementsByName(id)[0]);
+if (target && target.scrollIntoView) {
+try { target.scrollIntoView(); } catch (ex3) {}
+}
+}
+
+document.addEventListener('click', nativeAnchorHandler, true);
+
+elApply.addEventListener('click', function () {
+readUIIntoState();
+applyToSmartAnchor(state.cfg);
+setStatus();
+});
+
+elReset.addEventListener('click', function () {
+elMode.value = 'on';
+elOffset.value = 72;
+elAnimate.value = 'true';
+elDuration.value = 280;
+elEasing.value = 'easeOut';
+elUpdateHash.value = 'true';
+elHistoryMode.value = 'push';
+elFocus.value = 'true';
+
+readUIIntoState();
+applyToSmartAnchor(state.cfg);
+setStatus();
+});
+
+elCopy.addEventListener('click', function () {
+elCopyHint.style.display = 'none';
+
+            // Copy the real (non-escaped) snippet
+            var raw = ''
+                + '<script>\n'
+                + '  window.SMARTANCHOR_CONFIG = {\n'
+                + '    offset: ' + state.cfg.offset + ',\n'
+                + '    animate: ' + (state.cfg.animate ? 'true' : 'false') + ',\n'
+                + '    duration: ' + state.cfg.duration + ',\n'
+                + '    easing: "' + state.cfg.easing + '",\n'
+                + '    updateHash: ' + (state.cfg.updateHash ? 'true' : 'false') + ',\n'
+                + '    historyMode: "' + state.cfg.historyMode + '",\n'
+                + '    focus: ' + (state.cfg.focus ? 'true' : 'false') + ',\n'
+                + '    autoInit: true\n'
+                + '  };\n'
+                + '<\/script>\n'
+                + '<script src="smartanchor.js" defer><\/script>\n';
+
+if (navigator.clipboard && navigator.clipboard.writeText) {
+navigator.clipboard.writeText(raw).then(function () {
+elCopyHint.style.display = 'block';
+setTimeout(function () { elCopyHint.style.display = 'none'; }, 1800);
+}, function () {
+elCopyHint.style.display = 'block';
+setTimeout(function () { elCopyHint.style.display = 'none'; }, 2200);
+});
+} else {
+elCopyHint.style.display = 'block';
+setTimeout(function () { elCopyHint.style.display = 'none'; }, 2200);
+}
+});
+
+// Init
+readUIIntoState();
+applyToSmartAnchor(state.cfg);
+setStatus();
+
+})();
+</script>
+
+</body>
+</html>
